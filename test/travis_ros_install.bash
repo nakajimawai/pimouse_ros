@@ -2,9 +2,9 @@
 
 #required packages
 #sudo apt-get install python-catkin-pkg
-sudo pip install empy
-sudo pip install pyyaml
-sudo pip install rospkg
+#sudo pip install empy
+#sudo pip install pyyaml
+#sudo pip install rospkg
 
 #ros install
 cd ..
