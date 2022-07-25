@@ -8,15 +8,15 @@ sudo pip install rospkg
 
 #ros install
 cd ..
-git clone https://github.com/ryuichiueda/ros_setup_scripts_Ubuntu14.04_server.git
-cd ./ros_setup_scripts_Ubuntu14.04_server
+git clone https://github.com/ryuichiueda/ros_setup_scripts_Ubuntu18.04_server.git
+cd ./ros_setup_scripts_Ubuntu18.04_server
 bash ./step0.bash
 #bash ./step1.bash
 #!/bin/bash -exv
 
 UBUNTU_VER=$(lsb_release -sc)
 ROS_VER=melodic
-[ "$UBUNTU_VER" = "bionic" ] || exit 1
+#[ "$UBUNTU_VER" = "bionic" ] || exit 1
 
 echo "deb http://packages.ros.org/ros/ubuntu $UBUNTU_VER main" > /tmp/$$-deb
 sudo mv /tmp/$$-deb /etc/apt/sources.list.d/ros-latest.list
@@ -66,7 +66,7 @@ echo '*******************************'
 #catkin setup
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
-source /opt/ros/indigo/setup.bash
+source /opt/ros/melodic/setup.bash
 catkin_init_workspace
 cd ~/catkin_ws
 catkin_make
