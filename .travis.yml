@@ -131,4 +131,5 @@ script:
   - cd ~/catkin_ws/src/pimouse_ros
   - bash -xve ./test/travis_package_make.bash
   -source ~/catkin_ws/devel/setup.bash
+  # Run test.launch
   -rostest pimouse_ros test.launch
