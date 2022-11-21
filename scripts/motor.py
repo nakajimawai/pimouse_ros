@@ -4,6 +4,7 @@ import sys, rospy, math
 from pimouse_ros.msg import MotorFreqs
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse
+from std_msgs.msg import String
 from pimouse_ros.srv import TimedMotion
 
 class Motor():
@@ -12,7 +13,9 @@ class Motor():
 
         rospy.on_shutdown(self.set_power)
         self.sub_raw = rospy.Subscriber('motor_raw',MotorFreqs,self.callback_raw_freq)
-	#self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
+	#
+	self.sub_sct = rospy.Subscriber('tcptopic',String,self.callback_sct)
+        #self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
 	self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
 	self.srv_tm = rospy.Service('timed_motion', TimedMotion, self.callback_tm)
@@ -55,6 +58,11 @@ class Motor():
 
     def callback_raw_freq(self,message):
 	self.set_raw_freq(message.left_hz,message.right_hz)
+
+	#
+    def callback_sct(self,message):
+		print("go")
+		self.set_raw_freq(400,400)
 
     def callback_tm(self,message):
 	if not self.is_on:
