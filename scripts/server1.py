@@ -28,7 +28,7 @@ print 'i am listening'
 while not rospy.is_shutdown():
     con,addr=sock.accept()
     try:
-        con.settimeout(100)
+        con.settimeout(1000)
         buf=con.recv(BUFFER)
 	if buf == b"":
 	    break

@@ -44,6 +44,7 @@ class Motor():
 		 open("/dev/rtmotor_raw_r0",'w') as rf:
 		lf.write(str(int(round(left_hz))) + "\n")
 		rf.write(str(int(round(right_hz))) + "\n")
+		print("set_success")
 	except:
 	    rospy.logerr("cannot write to rtmotor_raw_*")
 
@@ -62,7 +63,9 @@ class Motor():
 	#
     def callback_sct(self,message):
 		print("go")
-		self.set_raw_freq(400,400)
+		if (message.data == "w"): self.set_raw_freq(400,400)
+		elif(message.data == "s"): self.set_raw_freq(0,0)
+		else: pass
 
     def callback_tm(self,message):
 	if not self.is_on:
