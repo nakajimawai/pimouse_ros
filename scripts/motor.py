@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #encording: utf8
-import sys, rospy, math
+import sys, rospy, math, time
 from pimouse_ros.msg import MotorFreqs
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse
@@ -8,7 +8,10 @@ from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 from pimouse_ros.srv import TimedMotion
 
+flag = 0
+
 class Motor():
+    #flag = 0
     def __init__(self):
         if not self.set_power(False): sys.exit(1)
 
@@ -18,6 +21,7 @@ class Motor():
 	self.sub_sct = rospy.Subscriber('tcptopic',String,self.callback_sct)
 	#laser
 	self.sub_laser = rospy.Subscriber('scan', LaserScan, self.callback_laser)
+	#self.sub_laser2 = rospy.Subscriber('scan', LaserScan, self.callback_laser2)
         self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
 	self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
@@ -82,11 +86,30 @@ class Motor():
 
     def callback_laser(self, message):
         print("receive scan_data")
-        for i in message.ranges:
-            if((0 < i) and (i < 0.15)):
+        global flag
+        print(flag)
+        if flag == 0:
+	    for i in message.ranges:
+	        if((0 < i) and (i < 0.15)):
+                    self.set_raw_freq(0,0)
+                    flag = 1
+                    time.sleep(1)
+	        else:
+	            continue
+
+        elif flag == 1:
+            self.set_raw_freq(-200, -200)
+            time.sleep(0.5)
+            cnt = len(message.ranges)
+            print(cnt)
+            for j in message.ranges:
+                if((0 < j) and (j < 0.2)):
+                    cnt -= 1
+            print(cnt)
+            if cnt == len(message.ranges):
                 self.set_raw_freq(0,0)
-            else:
-                continue
+                flag = 0
+    #def callback_laser2(self, message)
 
     def callback_tm(self,message):
 	if not self.is_on:
