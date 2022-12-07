@@ -5,6 +5,7 @@ from pimouse_ros.msg import MotorFreqs
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse
 from std_msgs.msg import String
+from sensor_msgs.msg import LaserScan
 from pimouse_ros.srv import TimedMotion
 
 class Motor():
@@ -13,9 +14,11 @@ class Motor():
 
         rospy.on_shutdown(self.set_power)
         self.sub_raw = rospy.Subscriber('motor_raw',MotorFreqs,self.callback_raw_freq)
-	#
+	#socket
 	self.sub_sct = rospy.Subscriber('tcptopic',String,self.callback_sct)
-        #self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
+	#laser
+	self.sub_laser = rospy.Subscriber('scan', LaserScan, self.callback_laser)
+        self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
 	self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
 	self.srv_tm = rospy.Service('timed_motion', TimedMotion, self.callback_tm)
@@ -60,12 +63,30 @@ class Motor():
     def callback_raw_freq(self,message):
 	self.set_raw_freq(message.left_hz,message.right_hz)
 
-	#
+    def callback_cmd_vel(self,message):
+        forward_hz = 80000.0*message.linear.x/(9*math.pi)
+	rot_hz = 400.0*message.angular.z/math.pi
+	self.set_raw_freq(forward_hz-rot_hz, forward_hz+rot_hz)
+
+	self.using_cmd_vel = True
+	self.alst_time = rospy.Time.now()
+
     def callback_sct(self,message):
 		print("go")
 		if (message.data == "w"): self.set_raw_freq(400,400)
+		elif(message.data == "x"): self.set_raw_freq(-400,-400)
+		elif(message.data == "a"): self.set_raw_freq(25,100)
+		elif(message.data == "d"): self.set_raw_freq(100,25)
 		elif(message.data == "s"): self.set_raw_freq(0,0)
 		else: pass
+
+    def callback_laser(self, message):
+        print("receive scan_data")
+        for i in message.ranges:
+            if((0 < i) and (i < 0.15)):
+                self.set_raw_freq(0,0)
+            else:
+                continue
 
     def callback_tm(self,message):
 	if not self.is_on:
@@ -88,4 +109,7 @@ if __name__=='__main__':
 
     rate=rospy.Rate(10)
     while not rospy.is_shutdown():
+	if m.using_cmd_vel and rospy.Time.now().to_sec() - m.last_time.to_sec() >= 1.0:
+	    m.set_raw_freq(0,0)
+            m.using_cmd_vel = False
 	rate.sleep()

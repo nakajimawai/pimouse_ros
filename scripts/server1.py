@@ -7,7 +7,7 @@ import rospy
 from std_msgs.msg import String
  
 ######################tcp begining
-HOST='192.168.143.152'
+HOST='192.168.11.26'
  
 PORT=8008
  
