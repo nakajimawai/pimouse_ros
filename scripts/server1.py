@@ -35,7 +35,6 @@ while not rospy.is_shutdown():
 	else:
 	    print(buf)
             pub.publish(buf)
-            time.sleep(1)
     except socket.timeout:
         print 'time out'
     con.send('yes i recve')
