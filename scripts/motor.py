@@ -93,20 +93,23 @@ class Motor():
 	        if((0 < i) and (i < 0.15)):
                     self.set_raw_freq(0,0)
                     flag = 1
-                    time.sleep(1)
+                    break
+                    #time.sleep(1)
 	        else:
 	            continue
 
         elif flag == 1:
             self.set_raw_freq(-200, -200)
-            time.sleep(0.5)
+            #time.sleep(0.5)
             cnt = len(message.ranges)
             print(cnt)
             for j in message.ranges:
                 if((0 < j) and (j < 0.2)):
                     cnt -= 1
+                    break
             print(cnt)
             if cnt == len(message.ranges):
+                print("no obstacle")
                 self.set_raw_freq(0,0)
                 flag = 0
     #def callback_laser2(self, message)
