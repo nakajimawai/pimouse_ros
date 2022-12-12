@@ -95,14 +95,14 @@ class Motor():
         print("receive scan_data")
         global flag
         global motor_hz
-'''
+        '''
 	print("flag:")
 	print(flag)
 	print("motor_hz:")
 	print(motor_hz[0], motor_hz[1])
-'''
-        if flag == 0:
-            for i in message.ranges:
+        '''
+	if flag == 0:
+	    for i in message.ranges:
                 if((0 < i) and (i < 0.15)):
     	            self.set_raw_freq(0,0)
 	            flag = 1
