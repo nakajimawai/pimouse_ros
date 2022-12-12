@@ -30,6 +30,7 @@ class Motor():
 	self.last_time = rospy.Time.now()
         self.last_time2 = rospy.Time.now()
 	self.command = "s"
+	self.count = 0
 	self.using_cmd_vel = False
 
     def set_power(self,onoff=False):
@@ -58,6 +59,7 @@ class Motor():
                 motor_hz[0] = left_hz
                 motor_hz[1] = right_hz
 		print("set_success")
+		self.count+=1
 	except:
 	    rospy.logerr("cannot write to rtmotor_raw_*")
 
@@ -66,6 +68,7 @@ class Motor():
 	d.success = self.set_power(onoff)
 	d.message = "ON" if self.is_on else "OFF"
 	return d
+
 
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
@@ -84,8 +87,8 @@ class Motor():
     def callback_sct(self,message):
 		print("go")
 		self.command = message.data
-		if (message.data == "w"): self.set_raw_freq(400,400)
-		elif(message.data == "x"): self.set_raw_freq(-400,-400)
+		if (message.data == "w"): self.set_raw_freq(200,200)
+		elif(message.data == "x"): self.set_raw_freq(-200,-200)
 		elif(message.data == "a"): self.set_raw_freq(25,100)
 		elif(message.data == "d"): self.set_raw_freq(100,25)
 		elif(message.data == "s"): self.set_raw_freq(0,0)
@@ -102,16 +105,41 @@ class Motor():
 	print(motor_hz[0], motor_hz[1])
         '''
 	if flag == 0:
-	    for i in range(90, 270):
-		distance = message.ranges[i]
-                if((0 < distance) and (distance < 0.15)):
-    	            self.set_raw_freq(0,0)
-	            flag = 1
-		    self.command = "s"
-		    self.last_time2 = rospy.Time.now()
-	            break
-                else:
-	 	    continue
+            if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0) and (self.count == 0):
+                pass
+            else:
+		    for i in range(90, 270):
+			distance = message.ranges[i]
+	                if((0 < distance) and (distance < 0.15)):
+	    	            self.set_raw_freq(0,0)
+		            flag = 1
+			    self.command = "s"
+			    self.last_time2 = rospy.Time.now()
+		            break
+	                else:
+		 	    continue
+
+		    for i in range(0, 89):
+	                distance = message.ranges[i]
+	                if((0 < distance) and (distance < 0.2)):
+	                    self.set_raw_freq(0,0)
+	                    flag = 2
+	                    self.command = "s"
+	                    self.last_time2 = rospy.Time.now()
+	                    break
+	                else:
+	                    continue
+
+	            for i in range(271, 359):
+	                distance = message.ranges[i]
+	                if((0 < distance) and (distance < 0.2)):
+	                    self.set_raw_freq(0,0)
+	                    flag = 2
+	                    self.command = "s"
+	                    self.last_time2 = rospy.Time.now()
+	                    break
+	                else:
+	                    continue
 
         elif flag == 1:
 	    if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
@@ -119,16 +147,44 @@ class Motor():
 	    else:
 		if self.command == "s":
 	            self.set_raw_freq(-200, -200)
-	            cnt = len(message.ranges)
-	            for j in message.ranges:
-	                if((0 < j) and (j < 0.2)):
+	            #cnt = len(message.ranges)
+		    cnt = 360
+	            for j in range(90, 270):
+			safe_distance = message.ranges[j]
+	                if((0 < safe_distance) and (safe_distance < 0.2)):
 	                    cnt -= 1
 		            break
-	            if cnt == len(message.ranges):
+	            if cnt == 360:
 	                print("no obstacle")
 			self.set_raw_freq(0, 0)
 		else:
 		    flag = 0
+
+        elif flag == 2:
+            if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
+                pass
+            else:
+                if self.command == "s":
+                    self.set_raw_freq(200, 200)
+                    #cnt = len(message.ranges)
+		    cnt = 360
+                    for j in range(0, 89):
+			safe_distance = message.ranges[j]
+                        if((0 < safe_distance) and (safe_distance < 0.25)):
+                            cnt -= 1
+                            break
+
+                    for j in range(269, 359):
+                        safe_distance = message.ranges[j]
+                        if((0 < safe_distance) and (safe_distance < 0.25)):
+                            cnt -= 1
+                            break
+
+                    if cnt == len(message.ranges):
+                        print("no obstacle")
+                        self.set_raw_freq(0, 0)
+                else:
+                    flag = 0
 
 
     def callback_tm(self,message):
@@ -152,7 +208,7 @@ if __name__=='__main__':
 
     rate=rospy.Rate(10)
     while not rospy.is_shutdown():
-	if m.using_cmd_vel and rospy.Time.now().to_sec() - m.last_time.to_sec() >= 1.0:
+	if m.using_cmd_vel and rospy.Time.now().to_sec() - m.last_time.to_sec() >= 3.0:
 	    m.set_raw_freq(0,0)
             m.using_cmd_vel = False
 	rate.sleep()
