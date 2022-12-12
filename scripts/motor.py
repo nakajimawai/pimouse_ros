@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #encording: utf8
-import sys, rospy, math, time
+import sys, rospy, math, time, datetime
 from pimouse_ros.msg import MotorFreqs
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger, TriggerResponse
@@ -9,6 +9,8 @@ from sensor_msgs.msg import LaserScan
 from pimouse_ros.srv import TimedMotion
 
 flag = 0
+motor_hz = [0, 0]
+settime = datetime.datetime.now()
 
 class Motor():
     #flag = 0
@@ -27,6 +29,8 @@ class Motor():
 	self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
 	self.srv_tm = rospy.Service('timed_motion', TimedMotion, self.callback_tm)
 	self.last_time = rospy.Time.now()
+        self.last_time2 = rospy.Time.now()
+	self.command = "s"
 	self.using_cmd_vel = False
 
     def set_power(self,onoff=False):
@@ -42,6 +46,9 @@ class Motor():
 	    return False
 
     def set_raw_freq(self,left_hz,right_hz):
+        global motor_hz
+	global settime
+    #
 	if not self.is_on:
 	    rospy.logerr("not enpowered")
 	    return
@@ -51,6 +58,12 @@ class Motor():
 		 open("/dev/rtmotor_raw_r0",'w') as rf:
 		lf.write(str(int(round(left_hz))) + "\n")
 		rf.write(str(int(round(right_hz))) + "\n")
+                motor_hz[0] = left_hz
+                motor_hz[1] = right_hz
+		#if (right_hz == 0) and (left_hz == 0):
+		    #self.command = "s"
+                   # self.last_time2 = rospy.Time.now()
+		settime = datetime.datetime.now()
 		print("set_success")
 	except:
 	    rospy.logerr("cannot write to rtmotor_raw_*")
@@ -73,10 +86,11 @@ class Motor():
 	self.set_raw_freq(forward_hz-rot_hz, forward_hz+rot_hz)
 
 	self.using_cmd_vel = True
-	self.alst_time = rospy.Time.now()
+	self.last_time = rospy.Time.now()
 
     def callback_sct(self,message):
 		print("go")
+		self.command = message.data
 		if (message.data == "w"): self.set_raw_freq(400,400)
 		elif(message.data == "x"): self.set_raw_freq(-400,-400)
 		elif(message.data == "a"): self.set_raw_freq(25,100)
@@ -87,32 +101,47 @@ class Motor():
     def callback_laser(self, message):
         print("receive scan_data")
         global flag
-        print(flag)
+        global motor_hz
+	global settime
+	print("flag:")
+	print(flag)
+	print("motor_hz:")
+	print(motor_hz[0], motor_hz[1])
+	print("settime:")
+	print(rospy.Time.now().to_sec() - self.last_time2.to_sec())
         if flag == 0:
-	    for i in message.ranges:
-	        if((0 < i) and (i < 0.15)):
-                    self.set_raw_freq(0,0)
-                    flag = 1
-                    break
-                    #time.sleep(1)
-	        else:
-	            continue
+            for i in message.ranges:
+                if((0 < i) and (i < 0.15)):
+    	            self.set_raw_freq(0,0)
+	            flag = 1
+		    self.command = "s"
+		    self.last_time2 = rospy.Time.now()
+	            break
+                else:
+	 	    continue
 
         elif flag == 1:
-            self.set_raw_freq(-200, -200)
-            #time.sleep(0.5)
-            cnt = len(message.ranges)
-            print(cnt)
-            for j in message.ranges:
-                if((0 < j) and (j < 0.2)):
-                    cnt -= 1
-                    break
-            print(cnt)
-            if cnt == len(message.ranges):
-                print("no obstacle")
-                self.set_raw_freq(0,0)
-                flag = 0
-    #def callback_laser2(self, message)
+	    if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
+
+	    #if (motor_hz[0] == 0) and (motor_hz[1] == 0) and ((datetime.datetime.now() - settime).total_seconds <= 1.0):
+		#flag = 0
+		#if self.command != "s":
+		   # flag = 0
+	        pass
+	    else:
+		if self.command == "s":
+	            self.set_raw_freq(-200, -200)
+	            cnt = len(message.ranges)
+	            for j in message.ranges:
+	                if((0 < j) and (j < 0.2)):
+	                    cnt -= 1
+		            break
+	            if cnt == len(message.ranges):
+	                print("no obstacle")
+			self.set_raw_freq(0, 0)
+		else:
+		    flag = 0
+
 
     def callback_tm(self,message):
 	if not self.is_on:
