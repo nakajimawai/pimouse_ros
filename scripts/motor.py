@@ -102,8 +102,9 @@ class Motor():
 	print(motor_hz[0], motor_hz[1])
         '''
 	if flag == 0:
-	    for i in message.ranges:
-                if((0 < i) and (i < 0.15)):
+	    for i in range(90, 270):
+		distance = message.ranges[i]
+                if((0 < distance) and (distance < 0.15)):
     	            self.set_raw_freq(0,0)
 	            flag = 1
 		    self.command = "s"
