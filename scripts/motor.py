@@ -13,7 +13,6 @@ motor_hz = [0, 0]
 settime = datetime.datetime.now()
 
 class Motor():
-    #flag = 0
     def __init__(self):
         if not self.set_power(False): sys.exit(1)
 
@@ -47,8 +46,6 @@ class Motor():
 
     def set_raw_freq(self,left_hz,right_hz):
         global motor_hz
-	global settime
-    #
 	if not self.is_on:
 	    rospy.logerr("not enpowered")
 	    return
@@ -60,10 +57,6 @@ class Motor():
 		rf.write(str(int(round(right_hz))) + "\n")
                 motor_hz[0] = left_hz
                 motor_hz[1] = right_hz
-		#if (right_hz == 0) and (left_hz == 0):
-		    #self.command = "s"
-                   # self.last_time2 = rospy.Time.now()
-		settime = datetime.datetime.now()
 		print("set_success")
 	except:
 	    rospy.logerr("cannot write to rtmotor_raw_*")
@@ -102,13 +95,12 @@ class Motor():
         print("receive scan_data")
         global flag
         global motor_hz
-	global settime
+'''
 	print("flag:")
 	print(flag)
 	print("motor_hz:")
 	print(motor_hz[0], motor_hz[1])
-	print("settime:")
-	print(rospy.Time.now().to_sec() - self.last_time2.to_sec())
+'''
         if flag == 0:
             for i in message.ranges:
                 if((0 < i) and (i < 0.15)):
@@ -122,11 +114,6 @@ class Motor():
 
         elif flag == 1:
 	    if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
-
-	    #if (motor_hz[0] == 0) and (motor_hz[1] == 0) and ((datetime.datetime.now() - settime).total_seconds <= 1.0):
-		#flag = 0
-		#if self.command != "s":
-		   # flag = 0
 	        pass
 	    else:
 		if self.command == "s":
