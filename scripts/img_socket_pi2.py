@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 import SocketServer
 import socket
-import cv2
+import cv2, rospy
 import numpy
 import sys
+from std_msgs.msg import String
 
 class TCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
 	self.data = self.request.recv(1024).strip()
+
+	rospy.init_node('tcptalker',anonymous=0)
+	pub=rospy.Publisher('tcptopic',String,queue_size=10)
+	pub.publish(self.data)
+
 	ret, frame=capture.read()
 	jpegstring = cv2.imencode('.jpg', frame)[1].tostring()
 	self.request.send(jpegstring)
