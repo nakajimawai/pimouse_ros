@@ -5,6 +5,7 @@ import time
 import socket
 import rospy
 from std_msgs.msg import String
+from geometry_msgs.msg import Twist
  
 ######################tcp begining
 HOST='192.168.11.26'
@@ -21,12 +22,13 @@ sock.listen(5)
  
 ################ros begining
 rospy.init_node('tcptalker',anonymous=0)
-pub=rospy.Publisher('tcptopic',String,queue_size=10)
- 
+pub_tcp=rospy.Publisher('tcptopic',String,queue_size=10)
+pub_cmd_vel=rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
 print 'i am listening'
  
 while not rospy.is_shutdown():
+    vel = Twist()
     con,addr=sock.accept()
     try:
         con.settimeout(1000)
@@ -35,7 +37,20 @@ while not rospy.is_shutdown():
 	    break
 	else:
 	    print(buf)
-            pub.publish(buf)
+            if buf == b"w":
+		vel.linear.x = 0.035
+	    elif buf == b"x":
+		vel.linear.x = -0.035
+            elif buf == b"a":
+                vel.angular.z = 3.14/18
+            elif buf == b"d":
+                vel.angular.z = -3.14/18
+            elif buf == b"s":
+                vel.linear.x = 0
+		vel.angular.z = 0
+
+	pub_cmd_vel.publish(vel)
+	pub_tcp.publish(buf)
     except socket.timeout:
         print 'time out'
     con.send('yes i recve')

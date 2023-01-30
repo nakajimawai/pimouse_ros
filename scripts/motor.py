@@ -27,11 +27,10 @@ class Motor():
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
 	self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
 	self.srv_tm = rospy.Service('timed_motion', TimedMotion, self.callback_tm)
-	self.last_time = rospy.Time.now()
         self.last_time2 = rospy.Time.now()
 	self.command = "s"
 	self.count = 0
-	self.using_cmd_vel = False
+
 
     def set_power(self,onoff=False):
 	en="/dev/rtmotoren0"
@@ -81,19 +80,21 @@ class Motor():
 	rot_hz = 400.0*message.angular.z/math.pi
 	self.set_raw_freq(forward_hz-rot_hz, forward_hz+rot_hz)
 
-	self.using_cmd_vel = True
-	self.last_time = rospy.Time.now()
-
+	#self.using_cmd_vel = True
+	#self.last_time = rospy.Time.now()
+    
     def callback_sct(self,message):
 		print("go")
 		self.command = message.data
+		'''
 		if (message.data == "w"): self.set_raw_freq(200,200)
 		elif(message.data == "x"): self.set_raw_freq(-200,-200)
 		elif(message.data == "a"): self.set_raw_freq(25,100)
 		elif(message.data == "d"): self.set_raw_freq(100,25)
 		elif(message.data == "s"): self.set_raw_freq(0,0)
 		else: pass
-
+		'''
+    
     def callback_laser(self, message):
         print("receive scan_data")
         global flag
@@ -104,6 +105,7 @@ class Motor():
 	print("motor_hz:")
 	print(motor_hz[0], motor_hz[1])
         '''
+	###Obstacle detection mode
 	if flag == 0:
             if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0) and (self.count == 0):
                 pass
@@ -141,6 +143,7 @@ class Motor():
 	                else:
 	                    continue
 
+	###Forward obstacle collision avoidance mode
         elif flag == 1:
 	    if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
 	        pass
@@ -157,9 +160,12 @@ class Motor():
 	            if cnt == 360:
 	                print("no obstacle")
 			self.set_raw_freq(0, 0)
+
+		#When starting to move after preventive action
 		else:
 		    flag = 0
 
+	###Rear obstacle collision avoidance mode
         elif flag == 2:
             if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
                 pass
@@ -183,6 +189,7 @@ class Motor():
                     if cnt == len(message.ranges):
                         print("no obstacle")
                         self.set_raw_freq(0, 0)
+		#When starting to move after preventive action
                 else:
                     flag = 0
 
@@ -208,7 +215,7 @@ if __name__=='__main__':
 
     rate=rospy.Rate(10)
     while not rospy.is_shutdown():
-	if m.using_cmd_vel and rospy.Time.now().to_sec() - m.last_time.to_sec() >= 3.0:
-	    m.set_raw_freq(0,0)
-            m.using_cmd_vel = False
+	#if m.using_cmd_vel and rospy.Time.now().to_sec() - m.last_time.to_sec() >= 3.0:
+	 #   m.set_raw_freq(0,0)
+          #  m.using_cmd_vel = False
 	rate.sleep()
