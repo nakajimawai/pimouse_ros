@@ -55,6 +55,8 @@ class Motor():
 
         # initialize twist info
         self.sim_twist = Twist()
+	# For odometry acquisition during anti-collision operation
+	self.col_twist = Twist()
 
         # Initialize odometry info
         self.sim_odom = Odometry()
@@ -220,10 +222,14 @@ class Motor():
 	if not self.is_on:
 	    return
 
-	### For Odometry
-        self.cmdvel_linear_x =-message.linear.x*2
-        self.cmdvel_linear_y =-message.linear.x*2
-        self.cmdvel_angular_z =message.angular.z
+	### For Odometry Position
+        self.cmdvel_linear_x = message.linear.x*2
+        self.cmdvel_linear_y = message.linear.x*2
+        self.cmdvel_angular_z = message.angular.z
+
+	###For Odometry Velocity
+	self.sim_twist.linear.x = message.linear.x
+	self.sim_twist.angular.z = message.angular.z
 
         forward_hz = 80000.0*message.linear.x/(9*math.pi)
 	rot_hz = 400.0*message.angular.z/math.pi
@@ -268,7 +274,11 @@ class Motor():
 		    for i in range(90, 270):
 			distance = message.ranges[i]
 	                if((0 < distance) and (distance < 0.15)):
-	    	            self.set_raw_freq(0,0)
+	    	            #self.set_raw_freq(0,0)
+			    #stop
+			    self.col_twist.linear.x = 0
+			    self.col_twist.angular.z = 0
+			    self.callback_cmd_vel(self.col_twist)
 		            flag = 1
 			    self.command = "s"
 			    self.last_time2 = rospy.Time.now()
@@ -278,8 +288,12 @@ class Motor():
 
 		    for i in range(0, 89):
 	                distance = message.ranges[i]
-	                if((0 < distance) and (distance < 0.2)):
-	                    self.set_raw_freq(0,0)
+	                if((0 < distance) and (distance < 0.15)):
+	                    #self.set_raw_freq(0,0)
+			    #stop
+                            self.col_twist.linear.x = 0
+                            self.col_twist.angular.z = 0
+                            self.callback_cmd_vel(self.col_twist)
 	                    flag = 2
 	                    self.command = "s"
 	                    self.last_time2 = rospy.Time.now()
@@ -289,8 +303,12 @@ class Motor():
 
 	            for i in range(271, 359):
 	                distance = message.ranges[i]
-	                if((0 < distance) and (distance < 0.2)):
-	                    self.set_raw_freq(0,0)
+	                if((0 < distance) and (distance < 0.15)):
+	                    #self.set_raw_freq(0,0)
+                            #stop
+                            self.col_twist.linear.x = 0
+                            self.col_twist.angular.z = 0
+                            self.callback_cmd_vel(self.col_twist)
 	                    flag = 2
 	                    self.command = "s"
 	                    self.last_time2 = rospy.Time.now()
@@ -298,14 +316,17 @@ class Motor():
 	                else:
 	                    continue
 
-	###Forward obstacle collision avoidance mode
+	### Forward obstacle collision avoidance mode
         elif flag == 1:
 	    if (motor_hz[0] == 0) and (motor_hz[1] == 0) and (rospy.Time.now().to_sec() - self.last_time2.to_sec() >= 1.0):
 	        pass
 	    else:
 		if self.command == "s":
-	            self.set_raw_freq(-200, -200)
-	            #cnt = len(message.ranges)
+	            #self.set_raw_freq(-200, -200)
+                    # back
+                    self.col_twist.linear.x = -0.07
+                    self.callback_cmd_vel(self.col_twist)
+
 		    cnt = 360
 	            for j in range(90, 270):
 			safe_distance = message.ranges[j]
@@ -314,7 +335,10 @@ class Motor():
 		            break
 	            if cnt == 360:
 	                print("no obstacle")
-			self.set_raw_freq(0, 0)
+			#self.set_raw_freq(0, 0)
+                        # stop
+                        self.col_twist.linear.x = 0
+                        self.callback_cmd_vel(self.col_twist)
 
 		#When starting to move after preventive action
 		else:
@@ -326,24 +350,28 @@ class Motor():
                 pass
             else:
                 if self.command == "s":
-                    self.set_raw_freq(200, 200)
-                    #cnt = len(message.ranges)
+                    #self.set_raw_freq(200, 200)
+                    # forward
+                    self.col_twist.linear.x = 0.07
+                    self.callback_cmd_vel(self.col_twist)
 		    cnt = 360
                     for j in range(0, 89):
 			safe_distance = message.ranges[j]
-                        if((0 < safe_distance) and (safe_distance < 0.25)):
+                        if((0 < safe_distance) and (safe_distance < 0.20)):
                             cnt -= 1
                             break
 
                     for j in range(269, 359):
                         safe_distance = message.ranges[j]
-                        if((0 < safe_distance) and (safe_distance < 0.25)):
+                        if((0 < safe_distance) and (safe_distance < 0.20)):
                             cnt -= 1
                             break
 
                     if cnt == len(message.ranges):
                         print("no obstacle")
-                        self.set_raw_freq(0, 0)
+                        # stop
+                        self.col_twist.linear.x = 0
+                        self.callback_cmd_vel(self.col_twist)
 		#When starting to move after preventive action
                 else:
                     flag = 0
