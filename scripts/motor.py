@@ -18,12 +18,10 @@ class Motor():
         if not self.set_power(False): sys.exit(1)
 
         rospy.on_shutdown(self.set_power)
-        self.sub_raw = rospy.Subscriber('motor_raw',MotorFreqs,self.callback_raw_freq)
 	#socket
 	self.sub_sct = rospy.Subscriber('tcptopic',String,self.callback_sct)
 	#laser
 	self.sub_laser = rospy.Subscriber('scan', LaserScan, self.callback_laser)
-	#self.sub_laser2 = rospy.Subscriber('scan', LaserScan, self.callback_laser2)
         self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
 	self.srv_off = rospy.Service('motor_off', Trigger, self.callback_off)
@@ -173,7 +171,7 @@ class Motor():
         # Save CSV path file
         cols = ["time", "x", "y", "z", "w0", "w1", "w2", "w3", "vx", "vy", "vz", "roll", "pitch", "yaw"]
         df = pd.DataFrame.from_dict(self.path_dict, orient='index',columns=cols)
-        df.to_csv("path_data_test_GUI.csv", index=False)
+        df.to_csv("Mr_nakajima.csv", index=False)
 
     def set_power(self,onoff=False):
 	en="/dev/rtmotoren0"
@@ -215,16 +213,13 @@ class Motor():
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
 
-    def callback_raw_freq(self,message):
-	self.set_raw_freq(message.left_hz,message.right_hz)
-
     def callback_cmd_vel(self,message):
 	if not self.is_on:
 	    return
 
 	### For Odometry Position
-        self.cmdvel_linear_x = message.linear.x*2
-        self.cmdvel_linear_y = message.linear.x*2
+        self.cmdvel_linear_x = message.linear.x*1.1
+        self.cmdvel_linear_y = message.linear.x*1.1
         self.cmdvel_angular_z = message.angular.z
 
 	###For Odometry Velocity
@@ -247,15 +242,7 @@ class Motor():
     def callback_sct(self,message):
 		print("go")
 		self.command = message.data
-		'''
-		if (message.data == "w"): self.set_raw_freq(200,200)
-		elif(message.data == "x"): self.set_raw_freq(-200,-200)
-		elif(message.data == "a"): self.set_raw_freq(25,100)
-		elif(message.data == "d"): self.set_raw_freq(100,25)
-		elif(message.data == "s"): self.set_raw_freq(0,0)
-		else: pass
-		'''
-    
+
     def callback_laser(self, message):
         print("receive scan_data")
         global flag
@@ -330,7 +317,7 @@ class Motor():
 		    cnt = 360
 	            for j in range(90, 270):
 			safe_distance = message.ranges[j]
-	                if((0 < safe_distance) and (safe_distance < 0.2)):
+	                if((0 < safe_distance) and (safe_distance < 0.20)):
 	                    cnt -= 1
 		            break
 	            if cnt == 360:
