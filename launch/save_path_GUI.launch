@@ -2,6 +2,7 @@
 <launch>
   <node pkg="pimouse_ros" name="tcp_talker" type="server1.py" required="true" />
   <node pkg="pimouse_ros" name="img_server" type="img_server.py" required="true" />
+  <node pkg="pimouse_ros" name="laser_tcp" type="laser_tcp.py" required="true" />
   <node pkg="hls_lfcd_lds_driver" type="hlds_laser_publisher" name="hlds_laser_publisher" output="screen">
     <param name="port" value="/dev/ttyUSB0"/>
     <param name="frame_id" value="laser"/>
