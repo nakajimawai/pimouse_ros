@@ -6,6 +6,7 @@ import socket
 import rospy
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
+from std_srvs.srv import Trigger
  
 ######################tcp begining
 HOST='192.168.11.26'
@@ -25,6 +26,9 @@ rospy.init_node('tcptalker',anonymous=0)
 pub_tcp=rospy.Publisher('tcptopic',String,queue_size=10)
 pub_cmd_vel=rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
+rospy.wait_for_service('/motor_on')
+rospy.wait_for_service('/motor_off')
+
 print 'i am listening'
  
 while not rospy.is_shutdown():
@@ -35,6 +39,12 @@ while not rospy.is_shutdown():
         buf=con.recv(BUFFER)
 	if buf == b"":
 	    break
+	elif buf == b"run":
+	    service_proxy = rospy.ServiceProxy('/motor_on', Trigger)
+	    service_proxy()
+	elif buf == b"fin":
+            service_proxy = rospy.ServiceProxy('/motor_off', Trigger)
+            service_proxy()
 	else:
 	    print(buf)
             if buf == b"w":
