@@ -2,7 +2,7 @@
 #encording: utf8
 import sys, rospy, math, time, tf, signal
 import pandas as pd
-from pimouse_ros.msg import MotorFreqs
+from pimouse_ros.msg import MotorFreqs, StringArray
 from geometry_msgs.msg import Twist, Quaternion, TransformStamped, Pose
 from std_srvs.srv import Trigger, TriggerResponse
 from std_msgs.msg import String, Header
@@ -22,8 +22,9 @@ class Motor():
 	self.sub_sct = rospy.Subscriber('tcptopic',String,self.callback_sct)
 	#laser
 	self.sub_laser = rospy.Subscriber('scan', LaserScan, self.callback_laser)
-	self.pub_laser = rospy.Publisher('laser_msg', String, queue_size = 10)
-	self.laser_msg = 'nothing'
+	self.pub_laser = rospy.Publisher('laser_msg', StringArray, queue_size = 10)
+	self.laser_msg_list = StringArray()
+	self.laser_msg_list.data = ['first','first','first','first']
 	#_
         self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
@@ -217,6 +218,24 @@ class Motor():
         d.message = "ON" if self.is_on else "OFF"
         return d
 
+    '''Obstacle monitoring function'''
+    def obstacle_monitoring(self, message):
+        ### forward range monitoring
+        for i in range(135, 225):
+            cnt = 91
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                print("Cannot move forward")
+                self.laser_msg_list.data[0] = 'F_O'
+                cnt -= 1
+                break
+            else:
+                continue
+
+        if cnt == 91:
+            print("nothing in front")
+            self.laser_msg_list.data[0] = 'F_V'
+
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
 
@@ -225,26 +244,18 @@ class Motor():
 		self.command = message.data
 
     def callback_laser(self, message):
+	s_time = time.time()
         print("receive scan_data")
 	if self.command == 's':
 	    print("Robot is stuck")
+	    self.obstacle_monitoring(message)
 
-	    for i in range(135, 225):
-		cnt = 91
-		distance = message.ranges[i]
-		if((0 < distance) and (distance < 0.15)):
-		    print("Cannot move forward")
-		    self.laser_msg = 'F_O'
-		    self.pub_laser.publish(self.laser_msg)
-		    cnt -= 1
-		    break
-		else:
-		    continue
+	    print(self.laser_msg_list)
 
-	    if cnt == 91:
-		print("nothing in front")
-		self.laser_msg = 'F_V'
-		self.pub_laser.publish(self.laser_msg)
+	    self.pub_laser.publish(self.laser_msg_list)
+
+	    print("send")
+
 	else:
 	    print("Robot is moving")
 
