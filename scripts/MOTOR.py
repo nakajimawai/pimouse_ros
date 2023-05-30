@@ -220,21 +220,73 @@ class Motor():
 
     '''Obstacle monitoring function'''
     def obstacle_monitoring(self, message):
+        cnt_f = 91
+	cnt_cw = 89
+	cnt_ccw = 89
+	cnt_b = 91
+
         ### forward range monitoring
         for i in range(135, 225):
-            cnt = 91
             distance = message.ranges[i]
             if((0 < distance) and (distance < 0.15)):
                 print("Cannot move forward")
                 self.laser_msg_list.data[0] = 'F_O'
-                cnt -= 1
+                cnt_f -= 1
                 break
             else:
                 continue
 
-        if cnt == 91:
+        if cnt_f == 91:
             print("nothing in front")
             self.laser_msg_list.data[0] = 'F_V'
+
+        ### cw range monitoring
+        for j in range(46, 134):
+            distance = message.ranges[j]
+            if((0 < distance) and (distance < 0.15)):
+                print("Cannot move cw")
+                self.laser_msg_list.data[1] = 'CW_O'
+                cnt_cw -= 1
+                break
+            else:
+                continue
+
+        if cnt_cw == 89:
+            print("nothing in cw")
+            self.laser_msg_list.data[1] = 'CW_V'
+
+        ### ccw range monitoring
+        for k in range(226, 314):
+            distance = message.ranges[k]
+            if((0 < distance) and (distance < 0.15)):
+                print("Cannot move ccw")
+                self.laser_msg_list.data[2] = 'CCW_O'
+                cnt_ccw -= 1
+                break
+            else:
+                continue
+
+        if cnt_ccw == 89:
+            print("nothing in ccw")
+            self.laser_msg_list.data[2] = 'CCW_V'
+
+        ### back range monitoring
+        for l in range(0, 359):
+	    if 46 <= l <= 314:
+	        continue      #skip
+
+            distance = message.ranges[l]
+            if((0 < distance) and (distance < 0.15)):
+                print("Cannot move back")
+                self.laser_msg_list.data[3] = 'B_O'
+                cnt_b -= 1
+                break
+            else:
+                continue
+
+        if cnt_b == 91:
+            print("nothing in back")
+            self.laser_msg_list.data[3] = 'B_V'
 
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
