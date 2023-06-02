@@ -24,7 +24,7 @@ class Motor():
 	self.sub_laser = rospy.Subscriber('scan', LaserScan, self.callback_laser)
 	self.pub_laser = rospy.Publisher('laser_msg', StringArray, queue_size = 10)
 	self.laser_msg_list = StringArray()
-	self.laser_msg_list.data = ['first','first','first','first']
+	self.laser_msg_list.data = [False, False, False, False]
 	#_
         self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
@@ -230,7 +230,7 @@ class Motor():
             distance = message.ranges[i]
             if((0 < distance) and (distance < 0.15)):
                 print("Cannot move forward")
-                self.laser_msg_list.data[0] = 'F_O'
+                self.laser_msg_list.data[0] = True
                 cnt_f -= 1
                 break
             else:
@@ -238,14 +238,14 @@ class Motor():
 
         if cnt_f == 91:
             print("nothing in front")
-            self.laser_msg_list.data[0] = 'F_V'
+            self.laser_msg_list.data[0] = False
 
         ### cw range monitoring
         for j in range(46, 134):
             distance = message.ranges[j]
             if((0 < distance) and (distance < 0.15)):
                 print("Cannot move cw")
-                self.laser_msg_list.data[1] = 'CW_O'
+                self.laser_msg_list.data[1] = True
                 cnt_cw -= 1
                 break
             else:
@@ -253,14 +253,14 @@ class Motor():
 
         if cnt_cw == 89:
             print("nothing in cw")
-            self.laser_msg_list.data[1] = 'CW_V'
+            self.laser_msg_list.data[1] = False
 
         ### ccw range monitoring
         for k in range(226, 314):
             distance = message.ranges[k]
             if((0 < distance) and (distance < 0.15)):
                 print("Cannot move ccw")
-                self.laser_msg_list.data[2] = 'CCW_O'
+                self.laser_msg_list.data[2] = True
                 cnt_ccw -= 1
                 break
             else:
@@ -268,7 +268,7 @@ class Motor():
 
         if cnt_ccw == 89:
             print("nothing in ccw")
-            self.laser_msg_list.data[2] = 'CCW_V'
+            self.laser_msg_list.data[2] = False
 
         ### back range monitoring
         for l in range(0, 359):
@@ -278,7 +278,7 @@ class Motor():
             distance = message.ranges[l]
             if((0 < distance) and (distance < 0.15)):
                 print("Cannot move back")
-                self.laser_msg_list.data[3] = 'B_O'
+                self.laser_msg_list.data[3] = True
                 cnt_b -= 1
                 break
             else:
@@ -286,7 +286,7 @@ class Motor():
 
         if cnt_b == 91:
             print("nothing in back")
-            self.laser_msg_list.data[3] = 'B_V'
+            self.laser_msg_list.data[3] = False
 
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
@@ -305,6 +305,10 @@ class Motor():
 	    print(self.laser_msg_list)
 
 	    self.pub_laser.publish(self.laser_msg_list)
+
+	    e_time = time.time()
+            ex_time = e_time - s_time
+   	    print("ex_time: {:.10f}sec".format(ex_time))
 
 	    print("send")
 
