@@ -250,8 +250,8 @@ class Motor():
             else:
                 continue
 
-        sub_array_f = self.laser_msg_list.data[4:7]
-	self.laser_msg_list.data[0] = any(sub_array_f)   #Determining if there is an obstacle forward
+        sub_array_forward = self.laser_msg_list.data[4:7]
+	self.laser_msg_list.data[0] = any(sub_array_forward)   #Determining if there is an obstacle forward
 
 	for j in range(4, 7):
 	    if cnt[j] == 0:
@@ -285,10 +285,83 @@ class Motor():
             else:
                 continue
 
-        sub_array_f = self.laser_msg_list.data[7:10]
-	self.laser_msg_list.data[1] = any(sub_array_f)   #Determining if there is an obstacle right
+        sub_array_right = self.laser_msg_list.data[7:10]
+	self.laser_msg_list.data[1] = any(sub_array_right)   #Determining if there is an obstacle right
 
 	for j in range(7, 10):
+	    if cnt[j] == 0:
+		self.laser_msg_list.data[j] = False
+
+        ### Left range monitoring
+        for i in range(225, 255):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[10] = True
+		cnt[10] += 1
+                break
+            else:
+                continue
+
+        for i in range(255, 285):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[11] = True
+                cnt[11] += 1
+                break
+            else:
+                continue
+
+        for i in range(285, 315):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[12] = True
+                cnt[12] += 1
+                break
+            else:
+                continue
+
+        sub_array_left = self.laser_msg_list.data[10:13]
+	self.laser_msg_list.data[2] = any(sub_array_left)   #Determining if there is an obstacle left
+
+	for j in range(10, 13):
+	    if cnt[j] == 0:
+		self.laser_msg_list.data[j] = False
+
+        ### Back range monitoring
+        for i in range(15, 45):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[13] = True
+		cnt[13] += 1
+                break
+            else:
+                continue
+
+        for i in range(0, 360):
+	    if 14 < i < 345:
+		continue   #skip
+
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[14] = True
+                cnt[14] += 1
+                break
+            else:
+                continue
+
+        for i in range(315, 345):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[15] = True
+                cnt[15] += 1
+                break
+            else:
+                continue
+
+        sub_array_back = self.laser_msg_list.data[13:16]
+	self.laser_msg_list.data[3] = any(sub_array_back)   #Determining if there is an obstacle back
+
+	for j in range(13, 16):
 	    if cnt[j] == 0:
 		self.laser_msg_list.data[j] = False
 
