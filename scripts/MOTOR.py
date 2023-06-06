@@ -226,8 +226,8 @@ class Motor():
         for i in range(135, 165):
             distance = message.ranges[i]
             if((0 < distance) and (distance < 0.15)):
-                self.laser_msg_list.data[1] = True
-		cnt[1] += 1
+                self.laser_msg_list.data[4] = True
+		cnt[4] += 1
                 break
             else:
                 continue
@@ -235,8 +235,8 @@ class Motor():
         for i in range(165, 195):
             distance = message.ranges[i]
             if((0 < distance) and (distance < 0.15)):
-                self.laser_msg_list.data[2] = True
-                cnt[2] += 1
+                self.laser_msg_list.data[5] = True
+                cnt[5] += 1
                 break
             else:
                 continue
@@ -244,21 +244,51 @@ class Motor():
         for i in range(195, 225):
             distance = message.ranges[i]
             if((0 < distance) and (distance < 0.15)):
-                self.laser_msg_list.data[3] = True
-                cnt[3] += 1
+                self.laser_msg_list.data[6] = True
+                cnt[6] += 1
                 break
             else:
                 continue
 
-        sub_array_f = self.laser_msg_list.data[2:4]
-	if any(sub_array_f):
-	    print("Cannot move forward")
-	    self.laser_msg_list.data[0] = True
-        else:
-            print("nothing in front")
-            self.laser_msg_list.data[0] = False
+        sub_array_f = self.laser_msg_list.data[4:7]
+	self.laser_msg_list.data[0] = any(sub_array_f)   #Determining if there is an obstacle forward
 
-	for j in range(1, 4):
+	for j in range(4, 7):
+	    if cnt[j] == 0:
+		self.laser_msg_list.data[j] = False
+
+        ### Right range monitoring
+        for i in range(105, 135):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[7] = True
+		cnt[7] += 1
+                break
+            else:
+                continue
+
+        for i in range(75, 105):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[8] = True
+                cnt[8] += 1
+                break
+            else:
+                continue
+
+        for i in range(45, 75):
+            distance = message.ranges[i]
+            if((0 < distance) and (distance < 0.15)):
+                self.laser_msg_list.data[9] = True
+                cnt[9] += 1
+                break
+            else:
+                continue
+
+        sub_array_f = self.laser_msg_list.data[7:10]
+	self.laser_msg_list.data[1] = any(sub_array_f)   #Determining if there is an obstacle right
+
+	for j in range(7, 10):
 	    if cnt[j] == 0:
 		self.laser_msg_list.data[j] = False
 
