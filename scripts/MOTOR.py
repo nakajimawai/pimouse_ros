@@ -365,6 +365,13 @@ class Motor():
 	    if cnt[j] == 0:
 		self.laser_msg_list.data[j] = False
 
+    def stop(self):
+        if (self.command == "w") and self.laser_msg_list.data[0]:
+            self.col_twist.linear.x = 0
+            self.col_twist.angular.z = 0
+            self.callback_cmd_vel(self.col_twist)
+            self.command = "s"
+
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
 
@@ -375,11 +382,9 @@ class Motor():
     def callback_laser(self, message):
 	s_time = time.time()
         print("receive scan_data")
-	if self.command == 's':
+	if self.command == "s":
 	    print("Robot is stuck")
 	    self.obstacle_monitoring(message)
-
-	    print(self.laser_msg_list)
 
 	    self.pub_laser.publish(self.laser_msg_list)
 
@@ -391,6 +396,11 @@ class Motor():
 
 	else:
 	    print("Robot is moving")
+	    self.obstacle_monitoring(message)
+
+	    if any(self.laser_msg_list.data):
+		print("Obstacle detected")
+		self.stop()
 
     def callback_tm(self,message):
 	if not self.is_on:
