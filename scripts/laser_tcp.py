@@ -5,7 +5,7 @@ import socket, rospy, time, struct
 from std_msgs.msg import String
 from pimouse_ros.msg import StringArray
 
-str = [True, True, True, True]
+str = [True for _ in range(16)]
 
 '''sending by socket'''
 def send_laser_msg(msg):
@@ -13,11 +13,14 @@ def send_laser_msg(msg):
     #print(msg)
     s_time = time.time()
 
-    data = struct.pack('b'*len(msg.data), *(msg.data))
+    data = struct.pack('b'*len(msg), *(msg))
     HOST = '192.168.11.4'
     PORT = 50000
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((HOST, PORT))
+
+    print(msg)
+
     client.sendall(data)
 
     e_time = time.time()
@@ -34,7 +37,8 @@ def callback(msg):
     for i in range(4):
         if msg.data[i] != str[i]:
     	    str = msg.data
-	    send_laser_msg(msg)
+	    sub_array = msg.data[0:4]   #Extract only obstacle information
+	    send_laser_msg(sub_array)
 	    break
         else:
 	    continue
