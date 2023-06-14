@@ -5,7 +5,7 @@ import pandas as pd
 from pimouse_ros.msg import MotorFreqs, StringArray
 from geometry_msgs.msg import Twist, Quaternion, TransformStamped, Pose
 from std_srvs.srv import Trigger, TriggerResponse
-from std_msgs.msg import String, Header
+from std_msgs.msg import String, Header, Bool
 from sensor_msgs.msg import LaserScan
 from pimouse_ros.srv import TimedMotion
 from nav_msgs.msg import Odometry
@@ -25,6 +25,11 @@ class Motor():
 	self.pub_laser = rospy.Publisher('laser_msg', StringArray, queue_size = 10)
 	self.laser_msg_list = StringArray()
 	self.laser_msg_list.data = [False for _ in range(16)]   #Obstacle information initialization
+	#_
+	#state
+	self.pub_state = rospy.Publisher('state_msg', Bool, queue_size=10)
+	self.state = Bool()
+	self.state = False
 	#_
         self.sub_cmd_vel=rospy.Subscriber('cmd_vel',Twist,self.callback_cmd_vel)
 	self.srv_on = rospy.Service('motor_on', Trigger, self.callback_on)
@@ -367,23 +372,32 @@ class Motor():
 
     def stop(self):
         if (self.command == "w") and self.laser_msg_list.data[0]:
-            self.col_twist.linear.x = 0
+            self.col_twist.linear.x = 0     #stop robot
             self.col_twist.angular.z = 0
             self.callback_cmd_vel(self.col_twist)
+
+	    self.state = False
+	    self.pub_state.publish(self.state)    #Notify the PC that the robot has stopped
             self.command = "s"
 
     def callback_on(self,message): return self.onoff_response(True)
     def callback_off(self,message): return self.onoff_response(False)
 
     def callback_sct(self,message):
-		print("go")
-		self.command = message.data
+	print("go")
+	self.command = message.data
+	if message.data == "s":
+	    print("Robot is stuck")
+	    self.state = False
+	else:
+            print("Robot is moving")
+            self.state = True
+	    self.pub_state.publish(self.state)
 
     def callback_laser(self, message):
 	s_time = time.time()
         print("receive scan_data")
-	if self.command == "s":
-	    print("Robot is stuck")
+	if not self.state:   #when the robot is stopped
 	    self.obstacle_monitoring(message)
 
 	    self.pub_laser.publish(self.laser_msg_list)
@@ -392,10 +406,7 @@ class Motor():
             ex_time = e_time - s_time
    	    print("ex_time: {:.10f}sec".format(ex_time))
 
-	    print("send")
-
 	else:
-	    print("Robot is moving")
 	    self.obstacle_monitoring(message)
 
 	    if any(self.laser_msg_list.data):
