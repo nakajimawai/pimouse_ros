@@ -370,8 +370,35 @@ class Motor():
 	    if cnt[j] == 0:
 		self.laser_msg_list.data[j] = False
 
-    def stop(self):
+    def decision_stop(self):
         if (self.command == "w") and self.laser_msg_list.data[0]:
+            self.col_twist.linear.x = 0     #stop robot
+            self.col_twist.angular.z = 0
+            self.callback_cmd_vel(self.col_twist)
+
+	    self.state = False
+	    self.pub_state.publish(self.state)    #Notify the PC that the robot has stopped
+            self.command = "s"
+
+        elif (self.command == "d") and self.laser_msg_list.data[1]:
+            self.col_twist.linear.x = 0     #stop robot
+            self.col_twist.angular.z = 0
+            self.callback_cmd_vel(self.col_twist)
+
+	    self.state = False
+	    self.pub_state.publish(self.state)    #Notify the PC that the robot has stopped
+            self.command = "s"
+
+        elif (self.command == "a") and self.laser_msg_list.data[2]:
+            self.col_twist.linear.x = 0     #stop robot
+            self.col_twist.angular.z = 0
+            self.callback_cmd_vel(self.col_twist)
+
+	    self.state = False
+	    self.pub_state.publish(self.state)    #Notify the PC that the robot has stopped
+            self.command = "s"
+
+        elif (self.command == "x") and self.laser_msg_list.data[3]:
             self.col_twist.linear.x = 0     #stop robot
             self.col_twist.angular.z = 0
             self.callback_cmd_vel(self.col_twist)
@@ -396,22 +423,25 @@ class Motor():
 
     def callback_laser(self, message):
 	s_time = time.time()
-        print("receive scan_data")
+        #print("receive scan_data")
 	if not self.state:   #when the robot is stopped
 	    self.obstacle_monitoring(message)
+	    print("Obstacle Array:")
+	    print(self.laser_msg_list.data)
+	    print("\n")
 
 	    self.pub_laser.publish(self.laser_msg_list)
 
 	    e_time = time.time()
             ex_time = e_time - s_time
-   	    print("ex_time: {:.10f}sec".format(ex_time))
+   	    #print("ex_time: {:.10f}sec".format(ex_time))
 
 	else:
 	    self.obstacle_monitoring(message)
-
+            self.pub_laser.publish(self.laser_msg_list)
 	    if any(self.laser_msg_list.data):
 		print("Obstacle detected")
-		self.stop()
+		self.decision_stop()
 
     def callback_tm(self,message):
 	if not self.is_on:
